@@ -2,6 +2,8 @@
 import mongoose from "mongoose";
 import bcrypt from 'bcrypt';
 import jwt from "jsonwebtoken";
+import ErrorHandler from "../utils/ErrorHandler.util.js";
+import { sendError } from "../utils/sendError.js";
 
 
 const userSchema = new mongoose.Schema(
@@ -27,6 +29,18 @@ const userSchema = new mongoose.Schema(
         avatar: {
             type: String,
 
+        },
+        refreshToken: [{
+            type: String,
+            default: null
+        }],
+        passwordResetOTP: {
+            type: String,
+            default: null
+        },
+        passwordResetOTPExpires: {
+            type: Date,
+            default: null
         }
     },
     {
@@ -34,19 +48,31 @@ const userSchema = new mongoose.Schema(
     }
 )
 
-userSchema.pre('save', async function () {
+userSchema.pre('save', async function (next) {
     /*
            so that bcrypt dont run every time when document is 
            modified and only run when "password" is modified
        */
-    if (!this.isModified('password')) return next();
+    try {
+        if (!this.isModified('password')) return next();
 
-    this.password = await bcrypt.hash(this.password, 10);
-    next();
+        this.password = await bcrypt.hash(this.password, 10);
+        next();
+    } catch (error) {
+        console.log("Error in hashing password: ", error);
+        throw new ErrorHandler("Error in hashing password")
+
+    }
 })
 
-userSchema.methods.isPasswordCorrect = async function (password) {
-    return await bcrypt.compare(password, this.password)
+userSchema.methods.isPasswordCorrect = async function (res, password) {
+    try {
+        return await bcrypt.compare(password, this.password)
+    } catch (error) {
+        console.log("Error in comparing password: ", error);
+        return sendError(res, 500, "Error in comparing password");
+
+    }
 }
 
 

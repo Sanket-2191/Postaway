@@ -1,4 +1,5 @@
-import ErrorHandler from "./ErrorHandler.util.js";
+
+import { sendError } from "./sendError.js";
 
 
 export const asyncHandler = (asyncRequest, options = {}) => {
@@ -6,12 +7,8 @@ export const asyncHandler = (asyncRequest, options = {}) => {
         try {
             await asyncRequest(req, res, next);
         } catch (error) {
-            if (error instanceof ErrorHandler) {
-                return next(error);
-            }
 
-            const { statusCode = 500, message = "Something went wrong" } = options;
-            next(new ErrorHandler(statusCode, message));
+            return sendError(res, 500, error.message || "Internal Server Error");
         }
     };
 }

@@ -1,4 +1,5 @@
 import multer from "multer";
+import ErrorHandler from "../utils/ErrorHandler.util.js";
 
 
 const storage = multer.diskStorage(
@@ -16,11 +17,13 @@ const storage = multer.diskStorage(
 export const upload = multer({
     storage,
     fileFilter: function (req, file, cb) {
-        if (!(file.mimetype === 'img/jpeg' || file.mimetype === 'img/png')) {
+        if (file.mimetype === 'image/jpeg' || file.mimetype === 'image/png') {
+            cb(null, true)
+        } else {
             cb(new ErrorHandler(400, 'Unsupported file format for :', file.fieldname), false); // Reject file properly
         }
 
-        cb(null, true)
+
     }
 }
 )
