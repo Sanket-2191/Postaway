@@ -5,9 +5,11 @@ import { UserModel } from "../models/user.model.js";
 import APIresponse from "../utils/APIresponse.util.js";
 import { asyncHandler } from "../utils/asyncHandler.util.js";
 import { uploadToCloudinary } from "../utils/cloudinaryUploads.util.js";
+import { deleteAssestFromCloudinary } from '../utils/deleteCloudinaryAssest.js';
 import { sendAPIResp } from "../utils/sendApiResp.js";
 import { sendError } from "../utils/sendError.js";
 import { sendEmail } from '../utils/sendMail.util.js';
+import { pipeline } from 'nodemailer/lib/xoauth2/index.js';
 
 const COOKIE_OPTIONS = { httpOnly: true, secure: true, sameSite: "strict" }
 
@@ -98,7 +100,6 @@ export const signup = asyncHandler(
         message: "Error while Signing-up new user."
     }
 )
-
 
 export const login = asyncHandler(
     async (req, res) => {
@@ -302,15 +303,16 @@ export const updateCurrentUserDetail = asyncHandler(async (req, res) => {
 
     console.log("1. find the user with req.user._id=", req.user._id);
 
-    if (!(fullname && email)) return sendError(res, 400, "All fields are required");
+    // if (!(fullname && email)) return sendError(res, 400, "All fields are required");
 
     console.log("2. find the user with req.user._id=", req.user._id);
     const updatedUser = await UserModel.findByIdAndUpdate(
         req.user._id,
         {
             $set: {
-                fullname,
-                email
+                fullname: fullname ? fullname : req.user.fullname,
+                email: email ? username : req.user.email
+
             }
         },
         {
@@ -328,3 +330,129 @@ export const updateCurrentUserDetail = asyncHandler(async (req, res) => {
     );
 },
     { statusCode: 500, message: "Email and fullName update failed :" });
+
+export const updateUserAvatar = asyncHandler(async (req, res) => {
+    // get avatar file objects from req.file not req.files as we are only accepting for one field.
+    const avatar = req.file;
+    if (!avatar) return sendError(res, 400, "No file received for avatar update");
+
+    // get localFilePath for avatar.
+    const avatarLocalFilePath = avatar?.path;
+    if (!avatarLocalFilePath) return sendError(res, 500,
+        "Unable to create file locally while avatar update!");
+
+    // get URL for avatarFile from cloudinary...
+    const cloudinaryOBJ = await uploadToCloudinary(avatarLocalFilePath);
+    const avatarURL = cloudinaryOBJ.url;
+    if (!avatarURL) return sendError(res, 500, "Unable to create cloudinary-url for avatar update!");
+
+    // update user with new avatar URL
+    const user = await UserModel.findByIdAndUpdate(
+        req.user._id,
+        {
+            $set: {
+                avatar: avatarURL
+            }
+        },
+        {
+            new: true
+        }
+    ).select("-password -refreshToken");
+
+    // delete old avatar from cloudinary..
+    const deleted = await deleteAssestFromCloudinary(res, req.user.avatar);
+    if (deleted.result !== "ok") return sendError(res, 500, `Cloudinary avatar delete failed: ${deleted.result}`)
+
+    return sendAPIResp(
+        res,
+        200,
+        "Avatar update successful✅✅",
+        user
+    );
+},
+    { statusCode: 500, message: "Avatar update failed :" });
+
+export const getUserChannelProfile = asyncHandler(async (req, res) => {
+    // this will generally get trggered when user clicks on other channel link or profile...
+    // get username from params
+    const { username, userId } = req.params;  // we will 
+    console.log("req.params.username :", username);
+
+    if (!username?.trim()) return sendError(res, 400, "No username received for fetching channel profile.");
+
+    if (userId && !(mongoose.isValidObjectId(userId))) return sendError(res, 400, "userId should be valid for fetching channel profile.");
+
+    const channelProfile = await userModel.aggregate([
+        // Match by userId or username
+        {
+            $match: { username }
+        },
+
+        // Users this user has sent requests to (outgoing)
+        {
+            $lookup: {
+                from: "friends",
+                localField: "_id",
+                foreignField: "user",
+                as: "friendsSent"
+            }
+        },
+
+        // Users who sent requests to this user (incoming)
+        {
+            $lookup: {
+                from: "friends",
+                localField: "_id",
+                foreignField: "friend",
+                as: "friendsReceived",
+                pipeline: [
+                    {
+                        $match: { status: "accepted" } // Only count accepted requests
+                    },
+                    {
+                        $project: {
+                            user: 1
+                        }
+                    }
+                ]
+            }
+        },
+
+        {
+            $addFields: {
+                friendsCount: { $size: "$friendsSent" },
+                followersCount: { $size: "$friendsReceived" },
+
+                isFriend: {
+                    $cond: {
+                        if: {
+                            $in: [
+                                mongoose.Types.ObjectId(req.user?._id), // Logged-in user
+                                "$friendsReceived.user" // Users who have sent request to this profile
+                            ]
+                        },
+                        then: true,
+                        else: false
+                    }
+                }
+            }
+        },
+
+        {
+            $project: {
+                username: 1,
+                fullName: 1,
+                avatar: 1,
+                friendsCount: 1,
+                followersCount: 1,
+                isFriend: 1
+            }
+        }
+    ]);
+
+    if (!channelProfile?.length) return sendError(res, 404, "channel not found");
+
+    return sendAPIResp(res, 200, 'Channel profile fetched successfully✅✅', channelProfile?.[0] || {});
+
+},
+    { statusCode: 500, message: "Unable to fetch channel profile :" })

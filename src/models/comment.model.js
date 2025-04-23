@@ -14,6 +14,10 @@ const commentSchema = new mongoose.Schema(
         commentedBy: {
             type: mongoose.Schema.ObjectId,
             ref: "User"
+        },
+        likes: {
+            type: Number,
+            default: 0
         }
     },
     {

@@ -3,17 +3,17 @@ import { Router } from "express";
 
 
 import { upload } from "../middlewares/multer.middleware.js";
-// import { verifyJWT } from "../middlewares/auth.middleware.js";
 import {
-    changeUserPassword, getCurrentUser, login,
+    changeUserPassword, getCurrentUser, getUserChannelProfile, login,
     logoutFromAllDevices, logoutUser, refreshAccessToken,
     resetPasswordOTP, resetPasswordWithOTP, signup,
-    updateCurrentUserDetail
+    updateCurrentUserDetail,
+    updateUserAvatar
 } from "../controllers/user.controllers.js";
 import { VerifyJWT } from "../middlewares/auth.middleware.js";
 
 
-const userRouter = Router();
+export const userRouter = Router();
 
 
 // route for registration
@@ -32,7 +32,12 @@ userRouter.route('/login').post(upload.none(), login)
 userRouter.route('/newAuthenticationTokens').get(refreshAccessToken)
 
 // get channelDetails
-// userRouter.route('/channelDetails/:username').get(getUserChannelProfile)
+userRouter.route('/channelDetails/:username').get(getUserChannelProfile)
+
+
+userRouter.route('/passwordResetOTP').get(resetPasswordOTP);
+userRouter.route('/resetPassword').get(resetPasswordWithOTP);
+
 
 /*------------------------ SECURED ROUTES ------------------------------------------- */
 
@@ -47,22 +52,17 @@ userRouter.route('/currentUserProfile').get(VerifyJWT, getCurrentUser);
 userRouter.route('/changePassword')
     .patch(VerifyJWT, upload.none(), changeUserPassword)
 
-userRouter.route('/passwordResetOTP').get(resetPasswordOTP);
-userRouter.route('/resetPassword').get(resetPasswordWithOTP);
-
-
 // // change fullname and email 
 userRouter.route('/change-email-fullName')
     .patch(VerifyJWT, upload.none(), updateCurrentUserDetail);
 
 // // change user avatar
-// userRouter.route('/change-avatar')
-//     .patch(verifyJWT, upload.single("avatar"), updateUserAvatar);
+userRouter.route('/change-avatar')
+    .patch(VerifyJWT, upload.single("avatar"), updateUserAvatar);
 
-// // change user coverImage 
+// // change user coverImage
 // // BUG-FIXED: always make sure '/' before route for proper concatination of routes
 // userRouter.route('/change-coverImage')
 //     .patch(verifyJWT, upload.single("coverImage"), updateUserCoverImage);
 
 
-export { userRouter }
