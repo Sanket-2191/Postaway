@@ -9,7 +9,6 @@ import { deleteAssestFromCloudinary } from '../utils/deleteCloudinaryAssest.js';
 import { sendAPIResp } from "../utils/sendApiResp.js";
 import { sendError } from "../utils/sendError.js";
 import { sendEmail } from '../utils/sendMail.util.js';
-import { pipeline } from 'nodemailer/lib/xoauth2/index.js';
 
 const COOKIE_OPTIONS = { httpOnly: true, secure: true, sameSite: "strict" }
 
@@ -46,7 +45,7 @@ const generate_access_and_refresh_tokens = async (res, userId) => {
 
 export const signup = asyncHandler(
     async (req, res) => {
-        const { email, username, password, fullname } = req.body;
+        const { email, username, password, fullname, gender } = req.body;
 
         if (!(email && username && password && fullname)) return sendError(res, 400, "All fields are required during signup.")
 
@@ -77,6 +76,7 @@ export const signup = asyncHandler(
             fullname,
             password,
             avatar: avatarURL,
+            gender,
             refreshToken: ""
         })
 
@@ -261,7 +261,8 @@ export const resetPasswordOTP = asyncHandler(async (req, res) => {
     user.passwordResetExpiry = Date.now() + 10 * 60 * 1000; // valid for 10 mins
     await user.save({ validateBeforeSave: false });
 
-    await sendEmail(res, email, "Postaway Password Reset OTP", `Your OTP is: ${otp}. Please do not share it with anyone. OTP is valid for 10 minutes.`);
+    await sendEmail(res, email, "Postaway Password Reset OTP",
+        `Your OTP is: ${otp}. Please do not share it with anyone. OTP is valid for 10 minutes.`);
 
     return sendAPIResp(res, 200, "OTP sent successfully");
 });

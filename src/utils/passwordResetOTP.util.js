@@ -14,7 +14,7 @@ export const requestPasswordOTP = asyncHandler(async (req, res) => {
     user.passwordResetExpiry = otpExpiry;
     await user.save({ validateBeforeSave: false });
 
-    // TODO: Send OTP via email/SMS (use nodemailer/twilio)
+    // TODO Send OTP via email/SMS (use nodemailer/twilio)
     console.log("OTP sent to user:", otp);
 
     return sendAPIResp(res, 200, "OTP sent successfully");

@@ -4,14 +4,14 @@ import nodemailer from 'nodemailer';
 import { sendError } from './sendError.js';
 
 
-export const sendEmail = async (res, to, subject, htmlContent) => {
+export const sendEmail = async (res, to, subject, htmlContent = null) => {
     try {
         // Create transporter using Gmail
         const transporter = nodemailer.createTransport({
             service: 'gmail',
             auth: {
-                user: process.env.MAIL_USER,     // Your Gmail address
-                pass: process.env.MAIL_PASS,     // Your Gmail App Password
+                user: process.env.MAIL_USER,     // Sender's email address
+                pass: process.env.MAIL_PASS,     // App Password
             },
         });
 

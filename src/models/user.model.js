@@ -30,6 +30,11 @@ const userSchema = new mongoose.Schema(
             type: String,
 
         },
+        gender: {
+            type: String,
+            enum: { values: ['male', 'female', 'other', 'prefer not to say'], message: '{VALUE} is not supported' },
+            default: 'prefer not to say'
+        },
         refreshToken: [{
             type: String,
             default: null
