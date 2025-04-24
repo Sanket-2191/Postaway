@@ -70,13 +70,14 @@ userSchema.pre('save', async function (next) {
     }
 })
 
-userSchema.methods.isPasswordCorrect = async function (res, password) {
-    try {
-        return await bcrypt.compare(password, this.password)
-    } catch (error) {
-        console.log("Error in comparing password: ", error);
-        return sendError(res, 500, "Error in comparing password");
+userSchema.methods.isPasswordCorrect = async function (password) {
+    if (!this.password || !password) throw new Error("Missing password");
 
+    try {
+        return await bcrypt.compare(password, this.password);
+    } catch (error) {
+        console.error("Error comparing password:", error.message);
+        throw new Error("Error comparing password");
     }
 }
 
@@ -88,12 +89,11 @@ userSchema.methods.generate_accessToken = function () {
             username: this.username,
             email: this.email
         },
+        'hsoifsbgsojbd09oiw3r2rjwkFJsdfdfngoi06943jmssov2651dfgd',
         {
             expiresIn: '1d'
-        },
-        {
-            secret: 'aslabsalifrubsn98w45n23j2jmf'
         }
+
     )
 
     return accessToken;
@@ -104,12 +104,11 @@ userSchema.methods.generate_refreshToken = function () {
         {
             _id: this._id
         },
+        'sbosieurth395034uwjtslnsps8y4hta5eoghdnifghr049u43ons',
         {
             expiresIn: '5d'
-        },
-        {
-            secret: 'aslabsalasfjkbsdfih93925072hnfewojmf'
         }
+
     )
 
     return refreshToken;

@@ -1,4 +1,4 @@
-
+import jwt from 'jsonwebtoken';
 import otpGenerator from 'otp-generator';
 
 import { UserModel } from "../models/user.model.js";
@@ -9,6 +9,7 @@ import { deleteAssestFromCloudinary } from '../utils/deleteCloudinaryAssest.js';
 import { sendAPIResp } from "../utils/sendApiResp.js";
 import { sendError } from "../utils/sendError.js";
 import { sendEmail } from '../utils/sendMail.util.js';
+import mongoose from 'mongoose';
 
 const COOKIE_OPTIONS = { httpOnly: true, secure: true, sameSite: "strict" }
 
@@ -16,6 +17,8 @@ const generate_access_and_refresh_tokens = async (res, userId) => {
     try {
         const user = await UserModel.findById(userId);
         if (!user) {
+            console.log("User not found while generating tokens");
+
             return sendError(res, 404, "User not found");
         }
 
@@ -24,21 +27,23 @@ const generate_access_and_refresh_tokens = async (res, userId) => {
 
         // Avoid storing duplicates
         if (!user.refreshToken.includes(refreshToken)) {
+            console.log("Storing new refresh token in DB...");
+
             user.refreshToken.push(refreshToken);
         }
 
-        // Optional: Limit stored refresh tokens (e.g., max 5)
+        // Limit stored refresh tokens (e.g., max 5)
         if (user.refreshToken.length > 5) {
             user.refreshToken = user.refreshToken.slice(-5);
         }
 
         await user.save({ validateBeforeSave: false });
 
-        console.log("User after saving refresh token: ", { accessToken, refreshToken });
+        console.log("Access token: ", accessToken);
+        console.log("Refresh token: ", refreshToken);
 
         return { accessToken, refreshToken };
     } catch (error) {
-        console.error("Error in generating tokens: ", error);
         return sendError(res, 500, "Error in generating tokens: " + error.message);
     }
 };
@@ -116,10 +121,11 @@ export const login = asyncHandler(
         });
         if (!user) return sendError(res, 404, "User not found")
 
-        const isPasswordCorrect = await user.isPasswordCorrect(res, password);
+        const isPasswordCorrect = await user.isPasswordCorrect(password);
         if (!isPasswordCorrect) return sendError(res, 401, "Incorrect password")
 
-        const { accessToken, refreshToken } = generate_access_and_refresh_tokens(res, user._id);
+        const { accessToken, refreshToken } = await generate_access_and_refresh_tokens(res, user._id);
+        if (!accessToken || !refreshToken) return sendError(res, 500, "Unable to generate tokens")
 
         return res.status(200)
             .cookie("accessToken", accessToken, COOKIE_OPTIONS)
@@ -128,9 +134,7 @@ export const login = asyncHandler(
                 new APIresponse(
                     200,
                     "Login successfull",
-                    {
-                        accessToken
-                    }
+                    { user, accessToken }
                 )
             )
     },
@@ -174,13 +178,13 @@ export const refreshAccessToken = asyncHandler(
         if (!refreshToken) return sendError(res, 401, "User not logged in")
 
 
-        const payload = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+        const payload = await jwt.verify(refreshToken, 'sbosieurth395034uwjtslnsps8y4hta5eoghdnifghr049u43ons');
         if (!payload) return sendError(res, 401, "Invalid refresh token");
 
         const user = await UserModel.findById({ _id: payload._id });
         if (!user) return sendError(res, 401, "Expired refresh token")
 
-        const { accessToken, refreshToken: newRefreshToken } = generate_access_and_refresh_tokens(res, user._id);
+        const { accessToken, refreshToken: newRefreshToken } = await generate_access_and_refresh_tokens(res, user._id);
 
 
         res.status(200)
@@ -202,21 +206,23 @@ export const refreshAccessToken = asyncHandler(
 
 export const logoutFromAllDevices = asyncHandler(
     async (req, res) => {
-        const { refreshToken } = req?.cookies || req?.body || undefined;
-        if (!refreshToken) return sendError(res, 401, "User not logged in",)
+
+        console.log("logging out from all devices...");
 
         await UserModel.findByIdAndUpdate(
             { _id: req.user._id },
-            { $unset: { refreshToken: [] } },
+            { $set: { refreshToken: [] } },
         )
 
+        console.log("logged out from all devices...");
         return res.status(200)
-            .clearCookie("refreshToken")
+            .clearCookie("refreshToken", COOKIE_OPTIONS)
+            .clearCookie("accessToken", COOKIE_OPTIONS)
             .json(
                 new APIresponse(
                     200,
                     "Logout successfull from all devices",
-                    {}
+                    null
                 )
             )
     },
@@ -312,7 +318,7 @@ export const updateCurrentUserDetail = asyncHandler(async (req, res) => {
         {
             $set: {
                 fullname: fullname ? fullname : req.user.fullname,
-                email: email ? username : req.user.email
+                email: email ? email : req.user.email
 
             }
         },
@@ -343,7 +349,7 @@ export const updateUserAvatar = asyncHandler(async (req, res) => {
         "Unable to create file locally while avatar update!");
 
     // get URL for avatarFile from cloudinary...
-    const cloudinaryOBJ = await uploadToCloudinary(avatarLocalFilePath);
+    const cloudinaryOBJ = await uploadToCloudinary(res, avatarLocalFilePath);
     const avatarURL = cloudinaryOBJ.url;
     if (!avatarURL) return sendError(res, 500, "Unable to create cloudinary-url for avatar update!");
 
@@ -383,7 +389,7 @@ export const getUserChannelProfile = asyncHandler(async (req, res) => {
 
     if (userId && !(mongoose.isValidObjectId(userId))) return sendError(res, 400, "userId should be valid for fetching channel profile.");
 
-    const channelProfile = await userModel.aggregate([
+    const channelProfile = await UserModel.aggregate([
         // Match by userId or username
         {
             $match: { username }
@@ -428,7 +434,7 @@ export const getUserChannelProfile = asyncHandler(async (req, res) => {
                     $cond: {
                         if: {
                             $in: [
-                                mongoose.Types.ObjectId(req.user?._id), // Logged-in user
+                                new mongoose.Types.ObjectId(req.user?._id), // Logged-in user
                                 "$friendsReceived.user" // Users who have sent request to this profile
                             ]
                         },

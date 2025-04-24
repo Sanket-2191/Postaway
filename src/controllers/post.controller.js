@@ -1,3 +1,5 @@
+import mongoose, { isValidObjectId } from "mongoose";
+
 import { PostModel } from "../models/post.model.js";
 import { asyncHandler } from "../utils/asyncHandler.util.js";
 import { uploadToCloudinary } from "../utils/cloudinaryUploads.util.js";
@@ -97,6 +99,8 @@ export const getPostById = asyncHandler(async (req, res) => {
 
 
 export const getPostsByUser = asyncHandler(async (req, res) => {
+    // console.log("Fetching posts for user:", req.user);
+
     const { userId } = req.query;
 
     if (!mongoose.isValidObjectId(userId)) {

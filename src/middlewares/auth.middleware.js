@@ -2,21 +2,30 @@ import jwt from 'jsonwebtoken'
 
 import { asyncHandler } from "../utils/asyncHandler.util.js"
 import { sendError } from '../utils/sendError.js';
+import { UserModel } from '../models/user.model.js';
 
-export const VerifyJWT = asyncHandler(async (res, req, next) => {
+export const VerifyJWT = asyncHandler(async (req, res, next) => {
+
+    console.log("JWT verification started...");
     const token = req?.cookies?.accessToken || req?.headers?.authorization?.split(" ")[1] || undefined;
-    if (!token) return sendError(res, 401, "User not logged in")
+    if (!token) {
+        console.log("Token not found");
+
+        return sendError(res, 401, "User not logged in");
+    }
 
     const payload = jwt.verify(
         token,
-        process.env.ACCESS_TOKEN_SECRET,
+        'hsoifsbgsojbd09oiw3r2rjwkFJsdfdfngoi06943jmssov2651dfgd',
         async (err, decoded) => {
             if (err) return sendError(res, 401, "Invalid token")
 
-            const user = await UserModel.findById({ _id: payload._id }).select("-password -refreshToken ");
+            const user = await UserModel.findById({ _id: decoded._id }).select("-password -refreshToken ");
 
             req.user = user;
-            next()
+            console.log("JWT verified");
+
+            next();
         }
     )
 

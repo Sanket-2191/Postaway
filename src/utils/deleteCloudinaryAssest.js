@@ -1,7 +1,9 @@
 import cloudinary from 'cloudinary';
 import { extractPublicId } from 'cloudinary-build-url';
 
-import { sendError } from './sendErrorResp.js';
+
+import { sendError } from './sendError.js';
+
 
 
 console.log("CLOUDINARY_CLOUD_NAME:", process.env.CLOUDINARY_CLOUD_NAME);

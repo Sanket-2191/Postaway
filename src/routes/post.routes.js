@@ -26,6 +26,6 @@ postRouter.route('/')
 // Retrieve, update or delete a specific post by ID
 postRouter.route('/:postId')
     .get(getPostById)
-    .patch(VerifyJWT, upload.single('post'), updatePost)
+    .patch(VerifyJWT, upload.none(), updatePost)
     .delete(VerifyJWT, deletePost);
 

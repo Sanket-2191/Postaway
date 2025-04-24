@@ -7,8 +7,8 @@ export const asyncHandler = (asyncRequest, options = {}) => {
         try {
             await asyncRequest(req, res, next);
         } catch (error) {
-
-            return sendError(res, 500, error.message || "Internal Server Error");
+            console.error("Error in asyncHandler:", error.message || error);
+            return sendError(res, error.statusCode || 500, error.message || "Internal Server Error");
         }
     };
 }

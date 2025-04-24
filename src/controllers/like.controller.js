@@ -1,12 +1,12 @@
 import { isValidObjectId } from "mongoose"
 
 
-import { sendError } from "../utils/sendErrorResp.js"
 import { sendAPIResp } from "../utils/sendApiResp.js"
-import { asyncHandler } from "../utils/asyncHandler.js"
 import { LikeModel } from "../models/like.model.js"
 import { CommentModel } from "../models/comment.model.js"
 import { PostModel } from "../models/post.model.js"
+import { sendError } from "../utils/sendError.js"
+import { asyncHandler } from "../utils/asyncHandler.util.js"
 
 const toggleLike = async (res, {
     modelKey,

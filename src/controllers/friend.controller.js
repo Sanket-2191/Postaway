@@ -1,10 +1,11 @@
 import mongoose from "mongoose";
 
 import { FriendModel } from "../models/friend.model.js";
-import { UserModel } from "../models/user.model.js";
-import asyncHandler from "../utils/asyncHandler.js";
 import { sendAPIResp } from "../utils/sendApiResp.js";
 import { sendError } from "../utils/sendError.js";
+import { asyncHandler } from "../utils/asyncHandler.util.js";
+
+
 
 // GET /api/friends/get-friends/:userId
 export const getFriends = asyncHandler(async (req, res) => {
