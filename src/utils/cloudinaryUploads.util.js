@@ -5,8 +5,8 @@ import { v2 as cloudinary } from 'cloudinary';
 
 import { sendError } from './sendError.js';
 
-console.log("Cloudinary API Key: ", process.env.CLOUDINARY_API_KEY ? "loaded" : "not loaded");
-console.log("Cloudinary API Secret: ", process.env.CLOUDINARY_API_SECRET ? "loaded" : "not loaded");
+// console.log("Cloudinary API Key: ", process.env.CLOUDINARY_API_KEY ? "loaded" : "not loaded");
+// console.log("Cloudinary API Secret: ", process.env.CLOUDINARY_API_SECRET ? "loaded" : "not loaded");
 
 
 cloudinary.config({

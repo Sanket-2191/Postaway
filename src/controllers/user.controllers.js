@@ -13,6 +13,7 @@ import mongoose from 'mongoose';
 
 const COOKIE_OPTIONS = { httpOnly: true, secure: true, sameSite: "strict" }
 
+// functionStart:
 const generate_access_and_refresh_tokens = async (res, userId) => {
     try {
         const user = await UserModel.findById(userId);
@@ -48,6 +49,7 @@ const generate_access_and_refresh_tokens = async (res, userId) => {
     }
 };
 
+// functionStart:
 export const signup = asyncHandler(
     async (req, res) => {
         const { email, username, password, fullname, gender } = req.body;
@@ -106,6 +108,7 @@ export const signup = asyncHandler(
     }
 )
 
+// functionStart:
 export const login = asyncHandler(
     async (req, res) => {
         const { loginCredential, password } = req.body;
@@ -144,6 +147,7 @@ export const login = asyncHandler(
     }
 )
 
+// functionStart:
 export const logoutUser = asyncHandler(
     async (req, res) => {
         const { refreshToken } = req?.cookies || req?.body || undefined;
@@ -172,6 +176,7 @@ export const logoutUser = asyncHandler(
     }
 )
 
+// functionStart:
 export const refreshAccessToken = asyncHandler(
     async (req, res) => {
         const { refreshToken } = req?.cookies || req?.body || undefined;
@@ -204,6 +209,7 @@ export const refreshAccessToken = asyncHandler(
     }
 )
 
+// functionStart:
 export const logoutFromAllDevices = asyncHandler(
     async (req, res) => {
 
@@ -233,6 +239,7 @@ export const logoutFromAllDevices = asyncHandler(
 )
 
 // works ✅✅
+// functionStart:
 export const changeUserPassword = asyncHandler(async (req, res) => {
     // get old password and newPassword.
     const { oldPassword, newPassword } = req.body;
@@ -256,51 +263,15 @@ export const changeUserPassword = asyncHandler(async (req, res) => {
 },
     { statusCode: 500, message: "Password change failed :" });
 
-export const resetPasswordOTP = asyncHandler(async (req, res) => {
-    const { email } = req.body;
-    const user = await UserModel.findOne({ email });
-    if (!user) return sendError(res, 404, "User not found");
 
-    const otp = otpGenerator.generate(6, { lowerCaseAlphabets: false, upperCaseAlphabets: true, specialChars: false })
-
-    user.passwordResetOTP = otp;
-    user.passwordResetExpiry = Date.now() + 10 * 60 * 1000; // valid for 10 mins
-    await user.save({ validateBeforeSave: false });
-
-    await sendEmail(res, email, "Postaway Password Reset OTP",
-        `Your OTP is: ${otp}. Please do not share it with anyone. OTP is valid for 10 minutes.`);
-
-    return sendAPIResp(res, 200, "OTP sent successfully");
-});
-
-export const resetPasswordWithOTP = asyncHandler(async (req, res) => {
-    const { email, otp, newPassword } = req.body;
-
-    const user = await UserModel.findOne({ email });
-    if (!user) return sendError(res, 404, "User not found");
-
-    if (
-        user.passwordResetOTP !== otp ||
-        !user.passwordResetExpiry ||
-        user.passwordResetExpiry < Date.now()
-    ) {
-        return sendError(res, 400, "Invalid or expired OTP");
-    }
-
-    user.password = newPassword; // hashing handled in schema
-    user.passwordResetOTP = undefined;
-    user.passwordResetExpiry = undefined;
-
-    await user.save({ validateBeforeSave: false });
-
-    return sendAPIResp(res, 200, "Password reset successfully ✅", {});
-});
 // works ✅✅
+// functionStart:
 export const getCurrentUser = asyncHandler(async (req, res) => {
     return sendAPIResp(res, 200, "Current user fetched successfully✅✅", req.user);
 },
     { statusCode: 500, message: "Unable to fetch Current user." });
 
+// functionStart:
 // BUG-FIXED Make sure the feidnames match in code and in form-data
 // works ✅✅
 export const updateCurrentUserDetail = asyncHandler(async (req, res) => {
@@ -338,6 +309,7 @@ export const updateCurrentUserDetail = asyncHandler(async (req, res) => {
 },
     { statusCode: 500, message: "Email and fullName update failed :" });
 
+// functionStart:
 export const updateUserAvatar = asyncHandler(async (req, res) => {
     // get avatar file objects from req.file not req.files as we are only accepting for one field.
     const avatar = req.file;
@@ -379,6 +351,7 @@ export const updateUserAvatar = asyncHandler(async (req, res) => {
 },
     { statusCode: 500, message: "Avatar update failed :" });
 
+// functionStart:
 export const getUserChannelProfile = asyncHandler(async (req, res) => {
     // this will generally get trggered when user clicks on other channel link or profile...
     // get username from params

@@ -3,12 +3,12 @@ import mongooseAggregatePaginate from "mongoose-aggregate-paginate-v2";
 
 const friendSchema = new mongoose.Schema(
     {
-        user: {
+        sender: {
             type: mongoose.Schema.ObjectId,
             ref: "User",
             required: true
         },
-        friend: {
+        sentTo: {
             type: mongoose.Schema.ObjectId,
             ref: "User",
             required: true

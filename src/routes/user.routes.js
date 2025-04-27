@@ -6,9 +6,7 @@ import { upload } from "../middlewares/multer.middleware.js";
 import {
     changeUserPassword, getCurrentUser, getUserChannelProfile, login,
     logoutFromAllDevices, logoutUser, refreshAccessToken,
-    resetPasswordOTP, resetPasswordWithOTP, signup,
-    updateCurrentUserDetail,
-    updateUserAvatar
+    signup, updateCurrentUserDetail, updateUserAvatar
 } from "../controllers/user.controllers.js";
 import { VerifyJWT } from "../middlewares/auth.middleware.js";
 
@@ -34,9 +32,6 @@ userRouter.route('/newAuthenticationTokens').get(refreshAccessToken)
 // get channelDetails
 userRouter.route('/userDetails/:username').get(getUserChannelProfile)
 
-
-userRouter.route('/passwordResetOTP').get(upload.none(), resetPasswordOTP);
-userRouter.route('/resetPassword').patch(upload.none(), resetPasswordWithOTP);
 
 
 /*------------------------ SECURED ROUTES ------------------------------------------- */

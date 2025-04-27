@@ -1,19 +1,23 @@
 import { Router } from "express";
 
 
-import { getFriends, getPendingRequests, respondToFriendRequest, toggleFriendship } from "../controllers/friend.controller.js";
+import { getFollowers, getUserWeFollow, getPendingRequests, respondToFriendRequest, toggleFriendship } from "../controllers/friend.controller.js";
 import { VerifyJWT } from "../middlewares/auth.middleware.js";
+import { upload } from "../middlewares/multer.middleware.js";
 
 export const friendRouter = Router();
 
 // Get a user's friends
-friendRouter.get('/get-friends/:userId', VerifyJWT, getFriends);
+friendRouter.route('/get-following/:userId').get(VerifyJWT, getUserWeFollow);
+
+// Get a user's followers
+friendRouter.route('/get-followers/:userId').get(VerifyJWT, getFollowers);
 
 // Get pending friend requests
-friendRouter.get('/get-pending-requests', VerifyJWT, getPendingRequests);
+friendRouter.route('/get-pending-requests').get(VerifyJWT, getPendingRequests);
 
 // Toggle friendship (send or cancel request / unfriend)
-friendRouter.post('/toggle-friendship/:friendId', VerifyJWT, toggleFriendship);
+friendRouter.route('/toggle-friendship/:friendId').post(VerifyJWT, toggleFriendship);
 
 // Accept or reject a friend request
-friendRouter.post('/response-to-request/:friendId', VerifyJWT, respondToFriendRequest);
+friendRouter.route('/response-to-request/:friendId').patch(VerifyJWT, upload.none(), respondToFriendRequest);

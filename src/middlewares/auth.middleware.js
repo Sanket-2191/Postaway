@@ -6,10 +6,10 @@ import { UserModel } from '../models/user.model.js';
 
 export const VerifyJWT = asyncHandler(async (req, res, next) => {
 
-    console.log("JWT verification started...");
+    // console.log("JWT verification started...");
     const token = req?.cookies?.accessToken || req?.headers?.authorization?.split(" ")[1] || undefined;
     if (!token) {
-        console.log("Token not found");
+        // console.log("Token not found");
 
         return sendError(res, 401, "User not logged in");
     }
@@ -23,7 +23,7 @@ export const VerifyJWT = asyncHandler(async (req, res, next) => {
             const user = await UserModel.findById({ _id: decoded._id }).select("-password -refreshToken ");
 
             req.user = user;
-            console.log("JWT verified");
+            // console.log("JWT verified");
 
             next();
         }

@@ -5,6 +5,6 @@ import APIresponse from "./APIresponse.util.js";
 export const sendAPIResp = (res, statusCode, message, data) => {
     return res.status(statusCode)
         .json(
-            new APIresponse(statusCode, data, message)
+            new APIresponse(statusCode, message, data)
         );
 };

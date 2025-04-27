@@ -31,12 +31,25 @@ import { postRouter } from './routes/post.routes.js';
 import { friendRouter } from './routes/friends.routes.js';
 import { likeRouter } from './routes/like.routes.js';
 import { commentRouter } from './routes/comment.routes.js';
+import { otpRouter } from './routes/otp.routes.js';
 
 
 const PREFIX = '/api/v1/';
+
+app.get(`/`, (req, res) => {
+    console.log("data requested");
+
+    return res.status(200)
+        .json({
+            status: "success",
+            message: "Welcome to the Postaway"
+        })
+}
+)
 
 app.use(`${PREFIX}users`, userRouter);
 app.use(`${PREFIX}posts`, postRouter);
 app.use(`${PREFIX}friends`, friendRouter);
 app.use(`${PREFIX}likes`, likeRouter);
 app.use(`${PREFIX}comments`, commentRouter);
+app.use(`${PREFIX}otp`, otpRouter)
