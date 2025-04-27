@@ -86,17 +86,78 @@ export const createPost = asyncHandler(async (req, res) => {
 export const getPostById = asyncHandler(async (req, res) => {
     const { postId } = req.params;
 
+    // Check if the postId is valid
     if (!mongoose.isValidObjectId(postId)) {
         return sendError(res, 400, "Invalid post ID");
     }
 
-    const post = await PostModel.findById(postId).populate("owner", "username avatar");
-    if (!post) return sendError(res, 404, "Post not found");
+    // Aggregate query to fetch post with like and comment counts
+    const post = await PostModel.aggregate([
+        {
+            $match: { _id: new mongoose.Types.ObjectId(postId) } // Match the post by its ID
+        },
+        {
+            $lookup: {
+                from: 'likes', // Join with likes collection
+                localField: '_id', // Matching field in post collection
+                foreignField: 'post', // Matching field in likes collection
+                as: 'likes'
+            }
+        },
+        {
+            $lookup: {
+                from: 'comments', // Join with comments collection
+                localField: '_id', // Matching field in post collection
+                foreignField: 'postId', // Matching field in comments collection
+                as: 'comments'
+            }
+        },
+        {
+            $project: {
+                caption: 1,  // Include caption of the post
+                owner: 1, // Include the post's owner
+                post: 1, // Include the post content
+                likeCount: { $size: "$likes" }, // Calculate the number of likes
+                commentCount: { $size: "$comments" }, // Calculate the number of comments
+                createdAt: 1, // Include creation timestamp
+                updatedAt: 1 // Include last updated timestamp
+            }
+        },
+        {
+            $lookup: {
+                from: 'users', // Look up user details for the owner
+                localField: 'owner', // Matching field in post collection
+                foreignField: '_id', // Matching field in users collection
+                as: 'ownerDetails'
+            }
+        },
+        {
+            $addFields: {
+                ownerDetails: { $arrayElemAt: ["$ownerDetails", 0] } // Get the first (and only) user from ownerDetails array
+            }
+        },
+        {
+            $project: {
+                caption: 1,
+                owner: 1,
+                post: 1,
+                likeCount: 1,
+                commentCount: 1,
+                ownerDetails: { username: 1, avatar: 1 }, // Only include relevant owner fields
+                createdAt: 1,
+                updatedAt: 1
+            }
+        }
+    ]);
 
-    return sendAPIResp(res, 200, "Post fetched successfully✅✅", post);
+    // If no post is found, return an error
+    if (!post.length) {
+        return sendError(res, 404, "Post not found");
+    }
+
+    return sendAPIResp(res, 200, "Post fetched successfully ✅✅", post[0]); // Send the first post result (post[0])
 },
     { statusCode: 500, message: "Something went wrong while fetching the post" });
-
 
 export const getPostsByUser = asyncHandler(async (req, res) => {
     // console.log("Fetching posts for user:", req.user);

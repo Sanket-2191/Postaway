@@ -71,11 +71,11 @@ export const togglePostLike = asyncHandler(async (req, res) => {
     return sendAPIResp(
         res,
         result.status === "liked" ? 201 : 200,
-        result.status === "liked" ? "Tweet liked✅✅" : "Unliked the tweet !!",
+        result.status === "liked" ? "Post liked✅✅" : "Unliked the post !!",
         result.data
     );
 },
-    { statusCode: 500, message: "Something went wrong while liking/unliking the Tweet." });
+    { statusCode: 500, message: "Something went wrong while liking/unliking the Post." });
 
 export const getLikedPosts = asyncHandler(async (req, res) => {
     const userId = req.user._id;
@@ -147,3 +147,92 @@ export const getLikedPosts = asyncHandler(async (req, res) => {
 },
     { statusCode: 500, message: "Something went wrong while fetching liked-Videos." });
 
+export const likesOnPost = asyncHandler(async (req, res) => {
+    const { postId } = req.params;
+
+    // Fetch likes for the specific post
+    const likes = await LikeModel.aggregate([
+        {
+            $match: {
+                post: new mongoose.Types.ObjectId(postId),
+            },
+        },
+        {
+            $lookup: {
+                from: "users",
+                localField: "likedBy",
+                foreignField: "_id",
+                as: "userDetails",
+            },
+        },
+        {
+            $addFields: {
+                userDetails: { $arrayElemAt: ["$userDetails", 0] },
+            },
+        },
+        {
+            $project: {
+                _id: 0,
+                likedBy: 1,
+                user: {
+                    _id: "$userDetails._id",
+                    username: "$userDetails.username",
+                    avatar: "$userDetails.avatar",
+                },
+            },
+        },
+    ]);
+
+    return sendAPIResp(
+        res,
+        200,
+        likes.length ? "Likes on post fetched successfully ✅✅" : "No likes found on this post.",
+        likes
+    );
+},
+    { statusCode: 500, message: "Something went wrong while fetching likes on post." });
+
+export const likesOnComment = asyncHandler(async (req, res) => {
+    const { commentId } = req.params;
+
+    // Fetch likes for the specific comment
+    const likes = await LikeModel.aggregate([
+        {
+            $match: {
+                comment: new mongoose.Types.ObjectId(commentId),
+            },
+        },
+        {
+            $lookup: {
+                from: "users",
+                localField: "likedBy",
+                foreignField: "_id",
+                as: "userDetails",
+            },
+        },
+        {
+            $addFields: {
+                userDetails: { $arrayElemAt: ["$userDetails", 0] },
+            },
+        },
+        {
+            $project: {
+                _id: 0,
+                likedBy: 1,
+                user: {
+                    _id: "$userDetails._id",
+                    username: "$userDetails.username",
+                    avatar: "$userDetails.avatar",
+                },
+            },
+        },
+    ]);
+
+    return sendAPIResp(
+        res,
+        200,
+        likes.length ? "Likes on comment fetched successfully ✅✅" : "No likes found on this comment.",
+        likes
+    );
+},
+    { statusCode: 500, message: "Something went wrong while fetching likes on comment." });
