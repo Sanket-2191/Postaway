@@ -1,4 +1,4 @@
-import { isValidObjectId } from "mongoose"
+import mongoose, { isValidObjectId } from "mongoose"
 
 
 import { sendAPIResp } from "../utils/sendApiResp.js"
@@ -163,22 +163,37 @@ export const likesOnPost = asyncHandler(async (req, res) => {
                 localField: "likedBy",
                 foreignField: "_id",
                 as: "userDetails",
+                pipeline: [
+                    {
+                        $project: {
+                            _id: 1,
+                            username: 1,
+                            avatar: 1
+                        }
+                    }
+                ]
             },
         },
         {
             $addFields: {
-                userDetails: { $arrayElemAt: ["$userDetails", 0] },
+
+                user: { $arrayElemAt: ["$userDetails", 0] },
             },
+        },
+        {
+            $group: {
+                _id: "$post",
+                users: {
+                    $push: "$user"
+                }
+            }
         },
         {
             $project: {
                 _id: 0,
-                likedBy: 1,
-                user: {
-                    _id: "$userDetails._id",
-                    username: "$userDetails.username",
-                    avatar: "$userDetails.avatar",
-                },
+                postId: "$_id",
+                likes: { $size: "$users" },
+                users: 1
             },
         },
     ]);
@@ -212,8 +227,16 @@ export const likesOnComment = asyncHandler(async (req, res) => {
         },
         {
             $addFields: {
-                userDetails: { $arrayElemAt: ["$userDetails", 0] },
+                user: { $arrayElemAt: ["$userDetails", 0] },
             },
+        },
+        {
+            $group: {
+                _id: "$comment",
+                users: {
+                    $push: "$user"
+                }
+            }
         },
         {
             $project: {

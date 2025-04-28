@@ -1,4 +1,4 @@
-
+import mongoose, { isValidObjectId } from "mongoose";
 
 import { sendAPIResp } from "../utils/sendApiResp.js"
 import { CommentModel } from "../models/comment.model.js";
@@ -17,7 +17,7 @@ export const getPostComments = asyncHandler(async (req, res) => {
     const commentAggregatePipeline = [
         {
             //@ts-ignore
-            $match: { post: new mongoose.ObjectId(postId) }
+            $match: { postId: new mongoose.Types.ObjectId(postId) }
         },
         {
             $lookup: {
@@ -28,8 +28,8 @@ export const getPostComments = asyncHandler(async (req, res) => {
                 pipeline: [
                     {
                         $project: {
+                            _id: 0,
                             avatar: 1,
-                            fullName: 1,
                             username: 1
                         }
                     }
@@ -43,8 +43,8 @@ export const getPostComments = asyncHandler(async (req, res) => {
         {
             $project: {
                 content: 1,
-                commentedBy: 1,
-                createdAt: 1,
+                commenterUsername: "$commentedBy.username",
+                commenterAvatar: "$commentedBy.avatar",
                 updatedAt: 1
             }
         }
@@ -68,13 +68,12 @@ export const getPostComments = asyncHandler(async (req, res) => {
 },
     { statusCode: 500, message: "Something went wrong while fetching comments on video." });
 
-
 export const addComment = asyncHandler(async (req, res) => {
     // TODO add a comment to a video
     const { commentContent } = req.body;
     const { postId } = req.params;
 
-    if (!isValidObjectId(postId)) return sendError(res, 400, "updating comment...postId is not vaild mongoose-objectId")
+    if (!mongoose.isValidObjectId(postId)) return sendError(res, 400, "updating comment...postId is not vaild mongoose-objectId")
 
 
     if (!commentContent) return sendError(res, 400, "comment cannot be empty.");
@@ -82,7 +81,7 @@ export const addComment = asyncHandler(async (req, res) => {
     const comment = await CommentModel.create({
         content: commentContent,
         commentedBy: req.user._id,
-        post: postId
+        postId: postId
     })
 
     if (!comment) return sendError(res, 500, "Uable to save new comment");
