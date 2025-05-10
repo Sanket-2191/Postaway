@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken';
+import mongoose from 'mongoose';
 import otpGenerator from 'otp-generator';
 
 import { UserModel } from "../models/user.model.js";
@@ -8,8 +9,6 @@ import { uploadToCloudinary } from "../utils/cloudinaryUploads.util.js";
 import { deleteAssestFromCloudinary } from '../utils/deleteCloudinaryAssest.js';
 import { sendAPIResp } from "../utils/sendApiResp.js";
 import { sendError } from "../utils/sendError.js";
-import { sendEmail } from '../utils/sendMail.util.js';
-import mongoose from 'mongoose';
 
 const COOKIE_OPTIONS = { httpOnly: true, secure: true, sameSite: "strict" }
 
