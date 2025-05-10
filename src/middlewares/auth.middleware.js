@@ -14,9 +14,9 @@ export const VerifyJWT = asyncHandler(async (req, res, next) => {
         return sendError(res, 401, "User not logged in");
     }
 
-    const payload = jwt.verify(
+    jwt.verify(
         token,
-        'hsoifsbgsojbd09oiw3r2rjwkFJsdfdfngoi06943jmssov2651dfgd',
+        process.env.ACCESS_TOKEN_SECRET,
         async (err, decoded) => {
             if (err) return sendError(res, 401, "Invalid token")
 

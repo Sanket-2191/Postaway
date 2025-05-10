@@ -37,7 +37,7 @@ import { otpRouter } from './routes/otp.routes.js';
 const PREFIX = '/api/v1/';
 
 app.get(`/`, (req, res) => {
-    console.log("data requested");
+    // console.log("data requested");
 
     return res.status(200)
         .json({
